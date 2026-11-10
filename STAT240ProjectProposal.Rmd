@@ -1,0 +1,139 @@
+---
+title: "Project Proposal"
+author: "20units^2"
+date: "2026-11-10"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+### Proposed STAT 240 Project: Comparing Ground Beetle Diversity in Wisconsin and Michigan
+
+We could use data from the National Ecological Observatory Network (NEON) to compare ground beetle (Carabidae) diversity between Treehaven, Wisconsin (TREE), and the University of Notre Dame Environmental Research Center, Michigan (UNDE). Both sites are at similar latitudes, which makes them an interesting comparison of northern Great Lakes forest communities and may give us a clearer picture into the similarities and disimlarities between Wisconsin and Michigan carabid fauna composition, but also give us a clearer picture into whether historical records accurately reflect the differences between sites or if heavy sampling bias exists within historical Wisconsin records.
+
+**Research questions:**
+- Which carabid species occur at each site, and how much overlap is there?
+- Does average carabid species richness per sampling plot differ between the two sites?
+
+NEON collects beetles using standardized pitfall traps and provides species identifications, individual counts, sampling dates, and plot information. I've confirmed that both sites have 10 sampling plots. 2022 is a good year to examine, because it's after the change in sampling method occured. 
+
+**Statistical method:** Inference on the difference between two population means, potentially using a two-sample t-test.
+
+Proposed visualizations:
+- Side-by-side boxplots comparing species richness per sampling plot at the two sites.
+- Species composition heatmap showing which carabid species were recorded at each site, potentially incorporating their relative abundances.
+I think this would be a manageable way to investigate differences in insect communities while applying statistical methods we've covered in class. The dataset requires an API token but is free, accessible and appears suitable for our project.
+
+**Dataset:** https://data.neonscience.org/data-products/DP1.10022.001
+
+
+---
+
+### Getting Started with the NEON Data
+
+I've already tested the dataset in RStudio. Both sites have 10 sampling plots in 2022, with 300 field records from TREE and 270 from UNDE.
+
+The following steps will allow everyone to access the same data. Run the code in your **RStudio Console**. The code examples are included here for reference and won't execute when this proposal is knitted.
+
+#### Step 1: Install the NEON R Package
+
+We need the `neonUtilities` package, which allows R to download NEON datasets directly.
+
+```{r install-neon, eval=FALSE, echo=TRUE}
+install.packages("neonUtilities")
+library(neonUtilities)
+```
+
+#### Step 2: Get a Free NEON API Token
+
+NEON requires an API token to download data. It is free and only takes a few steps.
+
+1. Visit https://www.neonscience.org/
+2. Create a free account or sign in.
+3. Open your account settings and generate an API token.
+4. Copy your token.
+5. Run the following code in your RStudio Console.
+
+```{r neon-token, eval=FALSE, echo=TRUE}
+# Paste your token when prompted
+Sys.setenv(
+  NEON_TOKEN = readline("Paste your NEON token: ")
+)
+
+# Check that R can access it
+nzchar(Sys.getenv("NEON_TOKEN"))
+```
+
+The last command should return `TRUE`.
+
+**Important:** Do not paste your actual token into this R Markdown file or upload it to GitHub. Each person should use their own token.
+
+#### Step 3: Download the Ground Beetle Dataset
+
+This code downloads Carabidae collection records from TREE (Wisconsin) and UNDE (Michigan) for May–September 2022.
+
+```{r download-beetles, eval=FALSE, echo=TRUE}
+library(neonUtilities)
+
+beetles <- loadByProduct(
+  dpID = "DP1.10022.001",
+  site = c("TREE", "UNDE"),
+  startdate = "2022-05",
+  enddate = "2022-09",
+  package = "basic",
+  token = Sys.getenv("NEON_TOKEN")
+)
+```
+
+#### Step 4: Explore the Data
+
+Once the download finishes, we can inspect the data and confirm everything loaded correctly.
+
+```{r explore-beetles, eval=FALSE, echo=TRUE}
+# See the available tables
+names(beetles)
+
+# View the sorting data
+View(beetles$bet_sorting)
+
+# Compare field records between sites
+table(beetles$bet_fielddata$siteID)
+
+# See the variables available
+names(beetles$bet_sorting)
+
+# View taxonomic identifications
+head(beetles$bet_sorting[
+  , c("siteID", "scientificName",
+      "taxonRank", "individualCount")
+])
+```
+
+The most useful tables for our project will likely be:
+
+- `bet_fielddata`: Information about trap sampling and collection events.
+- `bet_sorting`: Beetle counts and taxonomic identifications.
+- `bet_expertTaxonomistIDProcessed`: Additional expert identification information.
+
+#### Step 5: Save the Data Locally
+
+Once the data are imported, we can save a local R copy to avoid downloading everything again.
+
+```{r save-beetles, eval=FALSE, echo=TRUE}
+saveRDS(beetles, "NEON_beetles_2022.rds")
+
+# Load the saved data in future R sessions
+beetles <- readRDS("NEON_beetles_2022.rds")
+```
+
+This saves our imported data for convenience. We will also need to preserve the original, unedited NEON CSV files for the final project submission.
+
+#### Additional Resources
+
+- [NEON Ground Beetle Dataset](https://data.neonscience.org/data-products/DP1.10022.001)
+- [NEON R Data Tutorial](https://www.neonscience.org/resources/learning-hub/tutorials/neondatastackr)
+- [NEON API Token Instructions](https://www.neonscience.org/resources/learning-hub/tutorials/neon-api-tokens-tutorial)
+
+Once everyone has the data, we can work together on calculating species richness, comparing the species recorded at each site, and developing our statistical analysis and visualizations.
